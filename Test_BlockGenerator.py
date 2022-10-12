@@ -7,13 +7,13 @@ import string
 import base64
 ### load current committee into memory
 members = []
-f = open("conf/comitteeNodes.json")
-content = f.read()
-f.close()
-committee = json.loads(content)
+#f = open("conf/comitteeNodes.json")
+#content = f.read()
+#f.close()
+#committee = json.loads(content)
 #print("COMMITTEE", committee)
-for m in committee["members"]:  
-    members.append(m["address"])
+#for m in committee["members"]:  
+#    members.append(m["address"])
 #print("MEMBERS", members)
 ## Meta Genesis: QmcUspFPs4nziiLmSm2jRume73jWv9R3nYETC7hLvcS5jX.json
 ## SupportFiles/MetaGenesisSource.json
@@ -476,7 +476,8 @@ def get_average_score_modifier(CID, reward_state):
 def get_modifier_value(values):
     ### REMOVE NEGATIVE VALUES
     values = [x for x in values if x >=0]
-    
+    print("GETTING MODIFIER VALUES:",values)
+
     ### SORT THE LIST
     sorted_values = sorted(values)
 
@@ -671,7 +672,7 @@ def random_chance(upper_range,threshold):
 def add_pending_member():
 
     should_add = random_chance(10,0)
-
+    print("in add_pending_member", should_add)
     ### GET CURRENT COMMITTEE
     f = open("SupportFiles/currentCommittee.txt")
     current_committee = f.readlines()
@@ -681,9 +682,11 @@ def add_pending_member():
         cleaned_current_committee.append(cc.strip())
 
     if should_add == True:
+        print("SHOULD ADD")
         f = open("SupportFiles/pending.txt")
         pending = f.readlines()
         f.close()
+        print("READ PENDING FILE")
 
    #     print("*************************")
    #     print("PENDING: ")
@@ -692,12 +695,14 @@ def add_pending_member():
     #    f = open("SupportingFiles/addresses.txt")
     #    addresses = f.readlines()
     #    f.close()
-
+        print("READING ACCOUNTS")
         f = open("SupportFiles/accounts.txt")
         accounts = f.readlines()
         f.close()
+        print("DONE READING ACCOUNTS")
         added_count = 0
         while added_count < should_add_count:
+            print("IN loop",added_count,should_add_count)
             added = False
             while added ==False:
 
@@ -705,24 +710,26 @@ def add_pending_member():
                     selected_index = random.randint(0,len(accounts)-1)
 
                     if accounts[selected_index] in pending: 
-                    #    print("ACCOUNT IN PENDING")
-                        pass
+                        print("ACCOUNT IN PENDING")
+                   #     pass
                     else:
                         ### ADDRESS CHECK
-                    
+                        print("CHECKING ADDRESS")
                         content = get_text_content_from_ipfs(accounts[selected_index])
                         content = json.loads(content)
                         if  content["address"].replace("\n","") in cleaned_current_committee:
-                    #        print("IN CURRENT COMMITTEE")
+                            print("IN CURRENT COMMITTEE")
 
-                            pass
+                    #        pass
                         else:
                             pending.append(accounts[selected_index])
+                            print("START WRITING TO PENDING")
                             f = open("SupportFiles/pending.txt","w")
                             for line in pending:
                                 if len(line) ==47:
                                     f.write(line)
                             f.close()
+                            print("DONE WRITING PENDING")
                             added = True
                             added_count = added_count + 1 
     return ipfshttphelper.addFileByPath("SupportFiles/pending.txt")
@@ -766,9 +773,9 @@ def createMetaBlock(previous_meta_id, previous_meta_height, previous_block_id, p
     members = load_committee()
     random.seed(previous_meta_id)
  #   a = input(members)
+    print("Checking Members")
     for m in members:
         mem = m.strip()
-
         behaviors_array.append(random_chance(100,behaviors[mem]))
        
  #   member1_honest = random_chance(100,behavior_1)
@@ -778,13 +785,13 @@ def createMetaBlock(previous_meta_id, previous_meta_height, previous_block_id, p
  #   member3_honest = random_chance(100,behavior_3)
  #   print("HONEST MEMBERS", member1_honest, member2_honest, member3_honest)
   #  x = input(behaviors_array)
-  
+    
     new_account_state = update_accout_state(account_state,members,behaviors_array)
     new_reward_state = update_reward_state(reward_state,members,behaviors_array)
 
     block_data["AccountState"] = new_account_state
     block_data["RewardState"] = new_reward_state
-    
+    print("ADDING PENDING MEMBER")
     pending_id = add_pending_member()
     block_data["PendingMembers"] = pending_id
 
@@ -847,7 +854,7 @@ def createMetaBlock(previous_meta_id, previous_meta_height, previous_block_id, p
 "Signature": "390e9292d04d38d6a7e6225e442110fdfbe1fa2889af97288a5eb39cd9d7a97dfc62c33e7294f3560c845c194d8a239779ba5537ce4527d8bb3a36be999a8f0b26066fcf418bf67b6b25df5bd5543a0ec12b69f1cc48f0f82363c93cad550c836f92fa7d0e29d5c9b2da59da4c582b9dea131aae3085b6eaeaf77fce9ee6ed96de4bca5babb32cf8bf8b9d7568130ca30aec3d2b9d9270cb842c63244e3d5252b11194846c242492b8e145c48950441313bfb64212a92d53fd8dfcd86d508693bcc7a8b59b0ee95acc3a24bf45187550c80e8183204cc4c159b7b71ebab22500429ba879e624cca1c37051c40d964d7f64c735ab223a27c3cd7ab428bc5916334426032095772d67c5fa6f627e723ed793e674db77adb7b49587d6aa0e35b9a5d375b9533b3cffa70433467a99b460f42dc98bbfb82542bdfc572794ac451598dfe654f32f22ac59af6c8f6f0ea6f22954f5e3649f731177bdbe691e1e9ed9a03bfcf937b2c179cd6fcf0e0111226a6d28c3d4183183e7168abc022b7346c9810580469cb872c4554569268dd53a55b476a12a36f914cf4f08e8b4c67eb67c99e1a0d45d8fed9d39d1e09956192293eb1d831d85757d2f3f6a870cd7c9b79bfc5daed35f611395ad11b9e2dd1421a9d866f111676fb2df1c96599b8dbfece1ad9de715c4a2913d8ee21e0c12e8dbb299a3c3a5a7431ae7d26314d335280221cb7c290b39238f88d3b742d748a0bf74e692f7eab104f6453eaa9fa4e5e28d30ef4edda62fac43737962585a0735f4cebbf276f669d6813512f83126433b1a4b2b522e0d7a733b7e9217cccc23ddacdc0884ea3a4dfcbf456bb8a5e2c0c6db9087f6785a90f43f6d9f21d56848ce44530f9f70b4ac118d0308af64392dec2656860d81a463eadb7254c7308c298430f07fdaa5c940"}
 '''
 
-#initialize_account_users(50)
+#initialize_account_users(10000)
 
 selections={}
 log_entries =[]
@@ -869,13 +876,13 @@ members = load_committee()
 set_behavior()
 behaviors = load_behavior()
 #a = input("PAUSE")
-should_add_count =5
+should_add_count =900
 print("SHOULD ADD: ", should_add_count)
 
 print("INIITAL ACCOUNT STATE: ", initial_account_state)
 cid, blockHeight, blockRef, validationRef, new_account_state, new_reward_state, committee_id = createMetaBlock("",0,"","",initial_account_state,initial_reward_state,initial_committee)
 print("GENESIS CREATED")
-for i in range (1,6000):
+for i in range (1,10000):
     cid, blockHeight, blockRef, validationRef, new_account_state, new_reward_state, committee_id  = createMetaBlock(cid, blockHeight, blockRef, validationRef, new_account_state, new_reward_state, committee_id)
 print()
 
