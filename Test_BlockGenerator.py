@@ -391,11 +391,11 @@ def new_committee_select(modifier, reward_state_CID):
             cleaned_pending.append(p.strip())
     selected = []
 
-    print("&&&&&&&&&&",cleaned_pending,len(cleaned_pending))
+#    print("&&&&&&&&&&",cleaned_pending,len(cleaned_pending))
     while len(selected) < committee_size:
-        print("SIZE OF CLEAR PENDING: ",len(cleaned_pending))
+ #       print("SIZE OF CLEAR PENDING: ",len(cleaned_pending))
         index = random.randint(0,len(cleaned_pending)-1)
-        print("INDEX: ", index)
+  #      print("INDEX: ", index)
         if index in selected:
             print("ALREADY SELECTED")
            # pass
@@ -405,10 +405,10 @@ def new_committee_select(modifier, reward_state_CID):
             addr = addr["address"]
             score = 0
             if addr in reward_state:
-                print("IN STATE: ")
+ #               print("IN STATE: ")
                 score = reward_state[addr.replace("\n","")]
             else:
-                print("NOT IN STATE: ")
+  #              print("NOT IN STATE: ")
                 score = 0
             should_add = should_add_member(modifier, score)
             if should_add:
@@ -420,10 +420,10 @@ def new_committee_select(modifier, reward_state_CID):
         usercid = pending[user]
        
         usercid = usercid.replace("\n","")
-        print("USERCID: ",usercid, len(usercid))
+ #       print("USERCID: ",usercid, len(usercid))
         content = get_text_content_from_ipfs(usercid)
         content = json.loads(content)
-        print("CONTENT: ", content, type(content))
+ #       print("CONTENT: ", content, type(content))
         new_users.append(content)
    
     f = open("SupportFiles/currentCommittee.txt","w")
@@ -440,13 +440,13 @@ def new_committee_select(modifier, reward_state_CID):
    
     members ={}
     members["members"] = new_users
-    print("******************")
-    print("MEMBERS:::::", members)
+ #   print("******************")
+ #   print("MEMBERS:::::", members)
     f = open("SupportFiles/temp.txt","w")
     f.write(json.dumps(members))
     f.close()
     new_committee_CID = ipfshttphelper.addFileByPath("SupportFiles/temp.txt")
-    print("NEW COMMITTEE CID = ", new_committee_CID)
+#    print("NEW COMMITTEE CID = ", new_committee_CID)
     clear_pending()
     return new_committee_CID
 
@@ -476,7 +476,7 @@ def get_average_score_modifier(CID, reward_state):
 def get_modifier_value(values):
     ### REMOVE NEGATIVE VALUES
     values = [x for x in values if x >=0]
-    print("GETTING MODIFIER VALUES:",values)
+ #   print("GETTING MODIFIER VALUES:",values)
 
     ### SORT THE LIST
     sorted_values = sorted(values)
@@ -489,10 +489,10 @@ def get_modifier_value(values):
 
     #### CALCULATE THE AVERAGE BASED ON REMAINING VALUES
     average = sum(sorted_values) // len(sorted_values)
-    print("AVERAGE", average)
+ #   print("AVERAGE", average)
     return average
 
-    print("new sorted values: ", sorted_values)
+ #   print("new sorted values: ", sorted_values)
 
 
 def reward_member(account_state,account_id):
@@ -670,9 +670,9 @@ def random_chance(upper_range,threshold):
     return False
 
 def add_pending_member():
-
-    should_add = random_chance(10,0)
-    print("in add_pending_member", should_add)
+    pending =[]
+    #should_add = random_chance(10,0)
+    #print("in add_pending_member", should_add)
     ### GET CURRENT COMMITTEE
     f = open("SupportFiles/currentCommittee.txt")
     current_committee = f.readlines()
@@ -680,13 +680,30 @@ def add_pending_member():
     cleaned_current_committee =[]
     for cc in current_committee:
         cleaned_current_committee.append(cc.strip())
+    for a in accounts_full:
+        content = get_text_content_from_ipfs(str(a).strip())
+        content = json.loads(content)
+        if content["address"].replace("\n","") in cleaned_current_committee:
+            print("In Current Committee",content["address"])
+        else:
+            pending.append(str(a).strip())
+    print("Start Writing pending")
+    f=open("SupportFiles/pending.txt","w")
+    for line in pending:
+        print(len(line),line)
+        if len(line)==46:
+            f.write(str(line)+"\n")
+        else:
+            print("ERROR WRITING")
+    f.close()
+    print("DONE WRITING PENDING")
 
-    if should_add == True:
-        print("SHOULD ADD")
-        f = open("SupportFiles/pending.txt")
-        pending = f.readlines()
-        f.close()
-        print("READ PENDING FILE")
+   # if should_add == True:
+   #     print("SHOULD ADD")
+   #     f = open("SupportFiles/pending.txt")
+   #     pending = f.readlines()
+   #     f.close()
+   #     print("READ PENDING FILE")
 
    #     print("*************************")
    #     print("PENDING: ")
@@ -695,44 +712,44 @@ def add_pending_member():
     #    f = open("SupportingFiles/addresses.txt")
     #    addresses = f.readlines()
     #    f.close()
-        print("READING ACCOUNTS")
-        f = open("SupportFiles/accounts.txt")
-        accounts = f.readlines()
-        f.close()
-        print("DONE READING ACCOUNTS")
-        added_count = 0
-        while added_count < should_add_count:
-            print("IN loop",added_count,should_add_count)
-            added = False
-            while added ==False:
-
-                if len(pending) < total_addresses:
-                    selected_index = random.randint(0,len(accounts)-1)
-
-                    if accounts[selected_index] in pending: 
-                        print("ACCOUNT IN PENDING")
-                   #     pass
-                    else:
-                        ### ADDRESS CHECK
-                        print("CHECKING ADDRESS")
-                        content = get_text_content_from_ipfs(accounts[selected_index])
-                        content = json.loads(content)
-                        if  content["address"].replace("\n","") in cleaned_current_committee:
-                            print("IN CURRENT COMMITTEE")
-
-                    #        pass
-                        else:
-                            pending.append(accounts[selected_index])
-                            print("START WRITING TO PENDING")
-                            f = open("SupportFiles/pending.txt","w")
-                            for line in pending:
-                                if len(line) ==47:
-                                    f.write(line)
-                            f.close()
-                            print("DONE WRITING PENDING")
-                            added = True
-                            added_count = added_count + 1 
-    return ipfshttphelper.addFileByPath("SupportFiles/pending.txt")
+    #    print("READING ACCOUNTS")
+    #    f = open("SupportFiles/accounts.txt")
+    #    accounts = f.readlines()
+    #    f.close()
+    #    print("DONE READING ACCOUNTS")
+    #    added_count = 0
+    #    while added_count < should_add_count:
+    #        print("IN loop",added_count,should_add_count)
+    #        added = False
+    #        while added ==False:
+#
+#                if len(pending) < total_addresses:
+#                    selected_index = random.randint(0,len(accounts)-1)
+#
+#                    if accounts[selected_index] in pending: 
+#                        print("ACCOUNT IN PENDING")
+#                   #     pass
+#                    else:
+#                        ### ADDRESS CHECK
+#                        print("CHECKING ADDRESS")
+#                        content = get_text_content_from_ipfs(accounts[selected_index])
+#                        content = json.loads(content)
+#                        if  content["address"].replace("\n","") in cleaned_current_committee:
+#                            print("IN CURRENT COMMITTEE")
+#
+#                    #        pass
+##                        else:
+#                            pending.append(accounts[selected_index])
+#                            print("START WRITING TO PENDING")
+#                            f = open("SupportFiles/pending.txt","w")
+#                            for line in pending:
+#                                if len(line) ==47:
+#                                    f.write(line)
+#                            f.close()
+#                            print("DONE WRITING PENDING")
+#                            added = True
+#                            added_count = added_count + 1 
+#    return ipfshttphelper.addFileByPath("SupportFiles/pending.txt")
 
 def createMetaBlock(previous_meta_id, previous_meta_height, previous_block_id, previous_val_id,  account_state, reward_state, committee_id):
     should_update_log = False
@@ -791,8 +808,11 @@ def createMetaBlock(previous_meta_id, previous_meta_height, previous_block_id, p
 
     block_data["AccountState"] = new_account_state
     block_data["RewardState"] = new_reward_state
-    print("ADDING PENDING MEMBER")
-    pending_id = add_pending_member()
+    if(block_height +1)%10 == 2:
+    
+        print("ADDING PENDING MEMBER")
+        add_pending_member()
+    pending_id = ipfshttphelper.addFileByPath("SupportFiles/pending.txt")
     block_data["PendingMembers"] = pending_id
 
    #### TESTING FOR VALUES WITH CURRENT COMMITTEE 
@@ -871,15 +891,23 @@ print("COMMITTEE SIZE: ", committee_size)
 initial_account_state = initialize_account_state()
 initial_reward_state = initialize_reward_state()
 members = load_committee()
+
+f = open("SupportFiles/addresses.txt")
+addresses_full = f.readlines()
+f.close()
+
+f = open("SupportFiles/accounts.txt")
+accounts_full = f.readlines()
+f.close()
 #new_state = update_accout_state(x,members)
 #print("UPDATED STATE ID: ", new_state)
 set_behavior()
 behaviors = load_behavior()
 #a = input("PAUSE")
-should_add_count =900
-print("SHOULD ADD: ", should_add_count)
+#should_add_count =900
+#print("SHOULD ADD: ", should_add_count)
 
-print("INIITAL ACCOUNT STATE: ", initial_account_state)
+#print("INIITAL ACCOUNT STATE: ", initial_account_state)
 cid, blockHeight, blockRef, validationRef, new_account_state, new_reward_state, committee_id = createMetaBlock("",0,"","",initial_account_state,initial_reward_state,initial_committee)
 print("GENESIS CREATED")
 for i in range (1,10000):
