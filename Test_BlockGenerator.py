@@ -5,6 +5,7 @@ from IPFSCallHelper import IPFSWorker
 import random
 import string
 import base64
+import copy
 ### load current committee into memory
 members = []
 #f = open("conf/comitteeNodes.json")
@@ -243,16 +244,20 @@ def initialize_initial_committee_updated():
     #  user["address"] = "QmcCLC5cUdXQ9EdSkoGcVY7UPxiU4VHB43YNtwjXYFvgMR"
     #  user["server"] = "3.13.252.251,8000"
     #  user["ipfs"] = "12D3KooWDMFk1dfWeNCeeYCssyXcDbNBv8WTEKScEmG4WxNBXnvY"
+
+ 
         users.append(m)
         selections[m["address"]] = 1
-        print()
-        print(users)
+        #print()
+        #print(users)
         f = open("SupportFiles/temp.txt","w")
         f.write(json.dumps(m))
         f.close()
 
         a = ipfshttphelper.addFileByPath("SupportFiles/temp.txt")
-    
+        address_to_account[str(m["address"]).strip()] = str(a).strip()
+        account_to_address[str(a).strip()] = str(m["address"]).strip()
+
     
 
         f = open("SupportFiles/accounts.txt")
@@ -262,7 +267,7 @@ def initialize_initial_committee_updated():
         
         for v in values:
             cleaned_values.append(v.strip())
-        print("VALUES: ", cleaned_values)
+        #print("VALUES: ", cleaned_values)
 
         if a.replace("\n","") in cleaned_values:
             print("INITIAL COMMITTEE MEMBER ALREADY ADDED")
@@ -316,6 +321,9 @@ def generate_user():
 
 #### TESTING ONLY
 def initialize_account_users(count):
+    account_to_address ={}
+    address_to_account ={}
+
     f = open("SupportFiles/accounts.txt","w")
     f.close()
     f = open("SupportFiles/addresses.txt","w")
@@ -344,8 +352,16 @@ def initialize_account_users(count):
         f.write(user_address)
         f.write("\n")
         f.close()
+        account_to_address[str(a).strip()] = str(user_address).strip()
+        address_to_account[str(user_address).strip()] = str(a).strip()
+    
+    f = open("SupportFiles/account_to_address.json","w")
+    f.write(json.dumps(account_to_address))
+    f.close()
 
-
+    f = open("SupportFiles/address_to_account.json","w")
+    f.write(json.dumps(address_to_account))
+    f.close()
 
 ### HELPER FUNCTION TO GET TEXT FROM CID
 def get_text_content_from_ipfs(CID):
@@ -670,7 +686,8 @@ def random_chance(upper_range,threshold):
     return False
 
 def add_pending_member():
-    pending =[]
+    pending = []
+    pending = copy.copy(accounts_full)
     #should_add = random_chance(10,0)
     #print("in add_pending_member", should_add)
     ### GET CURRENT COMMITTEE
@@ -679,23 +696,39 @@ def add_pending_member():
     f.close()
     cleaned_current_committee =[]
     for cc in current_committee:
-        cleaned_current_committee.append(cc.strip())
-    for a in accounts_full:
-        content = get_text_content_from_ipfs(str(a).strip())
-        content = json.loads(content)
-        if content["address"].replace("\n","") in cleaned_current_committee:
-            print("In Current Committee",content["address"])
-        else:
-            pending.append(str(a).strip())
+        #cleaned_current_committee.append(cc.strip())
+        print("removing", cc)
+        print((address_to_account[cc.strip()]))
+        pending.remove(address_to_account[[cc.strip()]])
+        
+#    for a in accounts_full:
+#        content = get_text_content_from_ipfs(str(a).strip())
+#        content = json.loads(content)
+#        if content["address"].replace("\n","") in cleaned_current_committee:
+#            print("In Current Committee",content["address"])
+#        else:
+       
+#    for a in accounts_full:
+#        content = get_text_content_from_ipfs(str(a).strip())
+#        content = json.loads(content)
+#        if content["address"].replace("\n","") in cleaned_current_committee:
+#            print("In Current Committee",content["address"])
+#        else:
+#            pending.append(str(a).strip())
     print("Start Writing pending")
-    f=open("SupportFiles/pending.txt","w")
-    for line in pending:
-        print(len(line),line)
-        if len(line)==46:
-            f.write(str(line)+"\n")
-        else:
-            print("ERROR WRITING")
-    f.close()
+
+    with open(r"SupportFiles/pending.txt","w") as f:
+        f.write("\n".join(pending))
+
+    j = input("PAUSE")     
+ #   f=open("SupportFiles/pending.txt","w")
+ #   for line in pending:
+ #       print(len(line),line)
+ #       if len(line)==46:
+ #           f.write(str(line)+"\n")
+ #       else:
+ #           print("ERROR WRITING")
+ #   f.close()
     print("DONE WRITING PENDING")
 
    # if should_add == True:
@@ -874,8 +907,31 @@ def createMetaBlock(previous_meta_id, previous_meta_height, previous_block_id, p
 "Signature": "390e9292d04d38d6a7e6225e442110fdfbe1fa2889af97288a5eb39cd9d7a97dfc62c33e7294f3560c845c194d8a239779ba5537ce4527d8bb3a36be999a8f0b26066fcf418bf67b6b25df5bd5543a0ec12b69f1cc48f0f82363c93cad550c836f92fa7d0e29d5c9b2da59da4c582b9dea131aae3085b6eaeaf77fce9ee6ed96de4bca5babb32cf8bf8b9d7568130ca30aec3d2b9d9270cb842c63244e3d5252b11194846c242492b8e145c48950441313bfb64212a92d53fd8dfcd86d508693bcc7a8b59b0ee95acc3a24bf45187550c80e8183204cc4c159b7b71ebab22500429ba879e624cca1c37051c40d964d7f64c735ab223a27c3cd7ab428bc5916334426032095772d67c5fa6f627e723ed793e674db77adb7b49587d6aa0e35b9a5d375b9533b3cffa70433467a99b460f42dc98bbfb82542bdfc572794ac451598dfe654f32f22ac59af6c8f6f0ea6f22954f5e3649f731177bdbe691e1e9ed9a03bfcf937b2c179cd6fcf0e0111226a6d28c3d4183183e7168abc022b7346c9810580469cb872c4554569268dd53a55b476a12a36f914cf4f08e8b4c67eb67c99e1a0d45d8fed9d39d1e09956192293eb1d831d85757d2f3f6a870cd7c9b79bfc5daed35f611395ad11b9e2dd1421a9d866f111676fb2df1c96599b8dbfece1ad9de715c4a2913d8ee21e0c12e8dbb299a3c3a5a7431ae7d26314d335280221cb7c290b39238f88d3b742d748a0bf74e692f7eab104f6453eaa9fa4e5e28d30ef4edda62fac43737962585a0735f4cebbf276f669d6813512f83126433b1a4b2b522e0d7a733b7e9217cccc23ddacdc0884ea3a4dfcbf456bb8a5e2c0c6db9087f6785a90f43f6d9f21d56848ce44530f9f70b4ac118d0308af64392dec2656860d81a463eadb7254c7308c298430f07fdaa5c940"}
 '''
 
-#initialize_account_users(10000)
+#initialize_account_users(100)
 
+
+f = open("SupportFiles/address_to_account.json")
+content = f.read()
+f.close()
+address_to_account = json.loads(content)
+
+f = open("SupportFiles/account_to_address.json")
+content = f.read()
+f.close()
+account_to_address = json.loads(content)
+
+
+#print("********************************")
+
+#print(address_to_account)
+#print()
+#print()
+#print(account_to_address)
+
+#print()
+#print()
+
+#print("******************************")
 selections={}
 log_entries =[]
 clear_pending()
@@ -887,6 +943,18 @@ total_addresses = len(addresses) -1
 
 #initial_committee = initialize_initial_committee()
 initial_committee, committee_size = initialize_initial_committee_updated()
+#print("********************************")
+
+#print(address_to_account)
+#print()
+#print()
+#print(account_to_address)
+
+#print()
+#print()
+
+#a = input("::::::")
+
 print("COMMITTEE SIZE: ", committee_size)
 initial_account_state = initialize_account_state()
 initial_reward_state = initialize_reward_state()
@@ -898,6 +966,7 @@ f.close()
 
 f = open("SupportFiles/accounts.txt")
 accounts_full = f.readlines()
+
 f.close()
 #new_state = update_accout_state(x,members)
 #print("UPDATED STATE ID: ", new_state)
