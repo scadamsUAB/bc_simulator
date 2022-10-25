@@ -58,7 +58,7 @@ def load_behavior():
     behaviors = f.read()
     f.close()
     behaviors = json.loads(behaviors)
-    print(behaviors)
+   # print(behaviors)
     return behaviors
 
 #### TESTING ONLY
@@ -77,7 +77,7 @@ def create_fake_cid():
 def initialize_account_state():
     x = {}
     y = json.dumps(x)
-    print("INITIALIZE ACCOUNT STATE",y)
+   # print("INITIALIZE ACCOUNT STATE",y)
     f = open("SupportFiles/temp.txt","w")
     f.write(y)
     f.close()
@@ -87,7 +87,7 @@ def initialize_account_state():
 def initialize_reward_state():
     x = {}
     y = json.dumps(x)
-    print("INITIALIZE REWARD STATE",y)
+  #  print("INITIALIZE REWARD STATE",y)
     f = open("SupportFiles/temp.txt","w")
     f.write(y)
     f.close()
@@ -294,7 +294,15 @@ def initialize_initial_committee_updated():
     f = open("SupportFiles/temp.txt","w")
     f.write(json.dumps(members))
     f.close()
+    
+    f = open("SupportFiles/address_to_account.json","w")
+    f.write(json.dumps(address_to_account))
+    f.close()
 
+    f = open("SupportFiles/account_to_address.json","w")
+    f.write(json.dumps(account_to_address))
+    f.close()
+    
     ### LOAD COMMITTEE FILE
   #  f = open("SupportFiles/currentCommittee.txt","w")
   #  f.write("QmcCLC5cUdXQ9EdSkoGcVY7UPxiU4VHB43YNtwjXYFvgMR\n")
@@ -331,7 +339,7 @@ def initialize_account_users(count):
     for i in range(0,count):
         user ={}
         priv, user_address = generate_user()
-        print("USER ADDRESS   ", user_address)
+        print("USER ADDRESS   ", user_address, i)
         user["address"] = user_address
         user["server"] = "3.13.252.251,8000"
         user["ipfs"] = "12D3KooWDMFk1dfWeNCeeYCssyXcDbNBv8WTEKScEmG4WxNBXnvY"
@@ -400,25 +408,29 @@ def new_committee_select(modifier, reward_state_CID):
     f = open("SupportFiles/pending.txt")
     pending = f.readlines()
     f.close()
-    cleaned_pending =[]
-  
-    for p in pending:
-        if len(p.strip())==46:
-            cleaned_pending.append(p.strip())
+    if i in range(0,10):
+        print(pending[i])
+ #   cleaned_pending =[]
+    print("PENDING SIZE",len(pending))
+    #for p in pending:
+    #    if len(p.strip())==46:
+  #          cleaned_pending.append(p.strip())
     selected = []
-
+    random.shuffle(pending)
 #    print("&&&&&&&&&&",cleaned_pending,len(cleaned_pending))
     while len(selected) < committee_size:
  #       print("SIZE OF CLEAR PENDING: ",len(cleaned_pending))
-        index = random.randint(0,len(cleaned_pending)-1)
+        index = random.randint(0,len(pending)-1)
   #      print("INDEX: ", index)
         if index in selected:
             print("ALREADY SELECTED")
            # pass
         else:
-            addr = get_text_content_from_ipfs(cleaned_pending[index])
+         #   print("GETTING" ,index, pending[index])
+            addr = get_text_content_from_ipfs(pending[index])
             addr = json.loads(addr)
             addr = addr["address"]
+        #    print("address",addr)
             score = 0
             if addr in reward_state:
  #               print("IN STATE: ")
@@ -433,10 +445,11 @@ def new_committee_select(modifier, reward_state_CID):
     new_users = []
 
     for user in selected:
+       # print("user: ", user)
         usercid = pending[user]
        
         usercid = usercid.replace("\n","")
- #       print("USERCID: ",usercid, len(usercid))
+       # print("USERCID: ",usercid, len(usercid))
         content = get_text_content_from_ipfs(usercid)
         content = json.loads(content)
  #       print("CONTENT: ", content, type(content))
@@ -478,14 +491,23 @@ def get_average_score_modifier(CID, reward_state):
     content = get_text_content_from_ipfs(CID)
     members = content.split("\n")
     scores=[]
+    print("REWARD STATE")
+    print(reward_state)
+   
+   # for x in reward_state:
+   #     print(len(x))
     for m in members:
-
+   #     print("CHECKING", m,len(m),reward_state[m+"\n"])
         if len(m) == 46:
-            if m in reward_state:
-                scores.append(reward_state[m])
+            print(m)
+            if account_to_address[m] in reward_state:
+               # print("appending value from reward")
+               # print(m)
+               # a = input("PAUSE")
+                scores.append(reward_state[account_to_address[m]])
             else:
                 scores.append(0)
-
+    print(scores)
            # content = get_text_content_from_ipfs(m)
     return  get_modifier_value(scores)
     
@@ -534,9 +556,10 @@ def update_accout_state(account_state, members, honest_array):
         pass
     
     try:
-        account_state_object = account_state_content()
-    except:
         account_state_object = json.loads(account_state_content)
+    except:
+        print("ERROR PARSING ACCOUNT STATE")
+        account_state_object = account_state_content
     for i in range(0, len(members)):
         if honest_array[i] == True:
             account_state_object = reward_member(account_state_object,members[i].replace("\n",""))
@@ -592,9 +615,10 @@ def update_reward_state(reward_state, members, honest_array):
         pass
     
     try:
-        reward_state_object = reward_state_content()
-    except:
         reward_state_object = json.loads(reward_state_content)
+    except:
+        reward_state_object = rewards_state_content
+        print("ERROR PARSING REWARD STATE")
     for i in range(0, len(members)):
         if honest_array[i] == True:
             reward_state_object = reward_member(reward_state_object,members[i].replace("\n",""))
@@ -697,9 +721,12 @@ def add_pending_member():
     cleaned_current_committee =[]
     for cc in current_committee:
         #cleaned_current_committee.append(cc.strip())
-        print("removing", cc)
-        print((address_to_account[cc.strip()]))
-        pending.remove(address_to_account[[cc.strip()]])
+       # print("PENDING SIZE",len(pending))
+      #  print("removing", cc,len(cc))
+       # print("PENDING",pending[0],len(pending[0]))
+       # print(address_to_account[cc.strip()],len(address_to_account[cc.strip()]))
+       # print(address_to_account[cc.strip()] in pending)
+        pending.remove(str(address_to_account[cc.strip()])+"\n")
         
 #    for a in accounts_full:
 #        content = get_text_content_from_ipfs(str(a).strip())
@@ -718,9 +745,9 @@ def add_pending_member():
     print("Start Writing pending")
 
     with open(r"SupportFiles/pending.txt","w") as f:
-        f.write("\n".join(pending))
+        f.write("".join(pending))
 
-    j = input("PAUSE")     
+  #  j = input("PAUSE")     
  #   f=open("SupportFiles/pending.txt","w")
  #   for line in pending:
  #       print(len(line),line)
@@ -788,7 +815,7 @@ def createMetaBlock(previous_meta_id, previous_meta_height, previous_block_id, p
     should_update_log = False
     new_block = {}
     block_data = {}
-
+    random.seed(str(previous_meta_id).strip())
     current_timestamp = time.time()
     block_height = previous_meta_height + 1
 
@@ -827,7 +854,7 @@ def createMetaBlock(previous_meta_id, previous_meta_height, previous_block_id, p
     for m in members:
         mem = m.strip()
         behaviors_array.append(random_chance(100,behaviors[mem]))
-       
+    print("DONE CHECKING MEMBER BEHAVIOR")    
  #   member1_honest = random_chance(100,behavior_1)
    # print("MEMBER 1 honest", member1_honest)
 #    member2_honest = random_chance(100,behavior_2)
@@ -835,8 +862,9 @@ def createMetaBlock(previous_meta_id, previous_meta_height, previous_block_id, p
  #   member3_honest = random_chance(100,behavior_3)
  #   print("HONEST MEMBERS", member1_honest, member2_honest, member3_honest)
   #  x = input(behaviors_array)
-    
+    print("CALCULATING ACCOUNT STATE")
     new_account_state = update_accout_state(account_state,members,behaviors_array)
+    print("CALCULATING REWARD STATE")
     new_reward_state = update_reward_state(reward_state,members,behaviors_array)
 
     block_data["AccountState"] = new_account_state
@@ -906,8 +934,7 @@ def createMetaBlock(previous_meta_id, previous_meta_height, previous_block_id, p
 	}, 
 "Signature": "390e9292d04d38d6a7e6225e442110fdfbe1fa2889af97288a5eb39cd9d7a97dfc62c33e7294f3560c845c194d8a239779ba5537ce4527d8bb3a36be999a8f0b26066fcf418bf67b6b25df5bd5543a0ec12b69f1cc48f0f82363c93cad550c836f92fa7d0e29d5c9b2da59da4c582b9dea131aae3085b6eaeaf77fce9ee6ed96de4bca5babb32cf8bf8b9d7568130ca30aec3d2b9d9270cb842c63244e3d5252b11194846c242492b8e145c48950441313bfb64212a92d53fd8dfcd86d508693bcc7a8b59b0ee95acc3a24bf45187550c80e8183204cc4c159b7b71ebab22500429ba879e624cca1c37051c40d964d7f64c735ab223a27c3cd7ab428bc5916334426032095772d67c5fa6f627e723ed793e674db77adb7b49587d6aa0e35b9a5d375b9533b3cffa70433467a99b460f42dc98bbfb82542bdfc572794ac451598dfe654f32f22ac59af6c8f6f0ea6f22954f5e3649f731177bdbe691e1e9ed9a03bfcf937b2c179cd6fcf0e0111226a6d28c3d4183183e7168abc022b7346c9810580469cb872c4554569268dd53a55b476a12a36f914cf4f08e8b4c67eb67c99e1a0d45d8fed9d39d1e09956192293eb1d831d85757d2f3f6a870cd7c9b79bfc5daed35f611395ad11b9e2dd1421a9d866f111676fb2df1c96599b8dbfece1ad9de715c4a2913d8ee21e0c12e8dbb299a3c3a5a7431ae7d26314d335280221cb7c290b39238f88d3b742d748a0bf74e692f7eab104f6453eaa9fa4e5e28d30ef4edda62fac43737962585a0735f4cebbf276f669d6813512f83126433b1a4b2b522e0d7a733b7e9217cccc23ddacdc0884ea3a4dfcbf456bb8a5e2c0c6db9087f6785a90f43f6d9f21d56848ce44530f9f70b4ac118d0308af64392dec2656860d81a463eadb7254c7308c298430f07fdaa5c940"}
 '''
-
-#initialize_account_users(100)
+initialize_account_users(10000)
 
 
 f = open("SupportFiles/address_to_account.json")
@@ -940,9 +967,20 @@ addresses = f.readlines()
 f.close()
 total_addresses = len(addresses) -1
 
-
+print(len(account_to_address))
 #initial_committee = initialize_initial_committee()
 initial_committee, committee_size = initialize_initial_committee_updated()
+print(len(account_to_address))
+f = open("SupportFiles/address_to_account.json")
+content = f.read()
+f.close()
+address_to_account = json.loads(content)
+
+f = open("SupportFiles/account_to_address.json")
+content = f.read()
+f.close()
+account_to_address = json.loads(content)
+
 #print("********************************")
 
 #print(address_to_account)
@@ -979,7 +1017,7 @@ behaviors = load_behavior()
 #print("INIITAL ACCOUNT STATE: ", initial_account_state)
 cid, blockHeight, blockRef, validationRef, new_account_state, new_reward_state, committee_id = createMetaBlock("",0,"","",initial_account_state,initial_reward_state,initial_committee)
 print("GENESIS CREATED")
-for i in range (1,10000):
+for i in range (1,100000):
     cid, blockHeight, blockRef, validationRef, new_account_state, new_reward_state, committee_id  = createMetaBlock(cid, blockHeight, blockRef, validationRef, new_account_state, new_reward_state, committee_id)
 print()
 
