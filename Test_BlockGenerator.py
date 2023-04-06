@@ -51,11 +51,13 @@ def set_behavior(amount1, amount2):
     for a in addresses:
         if count < amount1:
             account_behavior[str(a.strip())]=0
-            count = count +1
+          
         elif count>=amount1 and count<amount2:
             account_behavior[str(a.strip())]=1
         else:
             account_behavior[str(a.strip())]=2
+        
+        count = count +1
     f = open("SupportFiles/behavior.json","w")
     f.write(json.dumps(account_behavior))
     f.close()    
